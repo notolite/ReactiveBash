@@ -53,6 +53,8 @@ llama-server -m ~/llm_model/gemma-4-E4B-it-Q4_K_M.gguf > /dev/null 2>&1 &
 ## 実行例
 ![\[~\]$ source ReactiveShell/run&#10; bashたん &gt; 準備はできてるわよ。ほら、ぼーっとしないで。さっさと指示出しなさいよね！&#10;\[~\]$ cd ReactiveShell/&#10; bashたん &gt; ふん、別に喜んでるわけじゃないけど、さっさと移動するんだから。&#10;\[ReactiveShell\]$ ls&#10; bashたん &gt; えっ、そんな簡単なこと聞くの？別に、特別に見てあげてるわけじゃないけどね。&#10;run&#10;\[ReactiveShell\]$ touch test.txt&#10; bashたん &gt; もう、何でそんなことばっかりするのよ。勝手に作ったんだから、文句言わないでよね。&#10;\[ReactiveShell\]$ echo &quot;helloworld&quot; &gt; test.txt&#10; bashたん &gt; はいはい、文字を書き込むだけなら簡単だけど。あんまり同じこと繰り返さないでよね。&#10;\[ReactiveShell\]$ ls -la&#10; bashたん &gt; うん、全部リストアップしたけど。見て、ちゃんとあるでしょ。当たり前じゃない。&#10;total 16&#10;drwxr-xr-x  2 usrname usrname  33 May  5 20:49 .&#10;drwx--x---+ 48 usrname usrname 4096 May  5 20:49 ..&#10;-rw-r--r--  1 usrname usrname 2596 May  5 20:29 run&#10;-rw-r--r--  1 usrname usrname  11 May  5 20:50 test.txt](sample.webp)
 
+bashたんが5秒以内に反応をくれない場合、ふつうにコードを実行することになっています。
+
 ## 今後の構想
 1. bash以外への対応
 
