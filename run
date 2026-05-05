@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 # reactive_shell.sh
-# Source this file in your .bashrc / .zshrc:
+# Source this file in your .bashrc
 #	source /path/to/reactive_shell.sh
 #
 # Requires a running llama.cpp server (default: http://localhost:8080)
-
 LLAMA_URL="${LLAMA_URL:-http://localhost:8080}"
 
 _llm_react() {
