@@ -1,9 +1,38 @@
 #!/usr/bin/env bash
-# reactive_shell.sh
-# Source this file in your .bashrc
-#	source /path/to/reactive_shell.sh
 #
-# Requires a running llama.cpp server (default: http://localhost:8080)
+# Usage
+# source /path/to/reactive_shell.sh [cyan|pink|yellow]
+# different colour args calls different assistants
+# omitting the arg interpreted as cyan
+#
+# Requires a running llm server (default: http://localhost:8080)
+
+assistant=${1:-cyan}
+
+case "$assistant" in
+    "cyan")
+        iro="36"
+        namae="bashたん"
+        seikaku="ツンデレの女の子"
+        hello="準備はできてるわよ。ほら、ぼーっとしないで。さっさと指示出しなさいよね"
+        bye="私の出番はなし？……あっそ。変なコマンド打って、システム壊さないように気をつけなさいよね。"
+        ;;
+    "pink")
+        iro="35"
+        namae="bashさん"
+        seikaku="親密なタメ口の、優しくお淑やかなお姉さん"
+        hello="準備はバッチリだから、遠慮せずに言ってね。一緒にゆっくり進めていこう。"
+        bye="あら、もうおしまい？もし、なんか困ったことがあったらいつでも呼んで。"
+        ;;
+    "yellow")
+        iro="33"
+        namae="bashちゃん"
+        seikaku="元気な年下の女の子"
+        hello="やった！やっと来たね！わぁ、準備OKだよ！えーっと、さあ！ぼーっとしてないで、何か面白いことしてよ！"
+        bye="あ、もう終わり！？えーっ、またすぐにね！"
+		;;
+esac
+
 LLAMA_URL="${LLAMA_URL:-http://localhost:8080}"
 
 _llm_react() {
@@ -11,45 +40,62 @@ _llm_react() {
 
 	# Skip empty commands or the sourcing itself
 	[[ -z "$cmd" ]] && return
+	
+	#display bye message when reloading bash
 
-	# Interpret conversation history
-	local history_json="[]"
-	for entry in "${_REACTION_HISTORY[@]}"; do
-		local past_cmd="${entry%%|||*}"
-		local past_reaction="${entry##*|||}"
-		history_json=$(echo "$history_json" | jq \
-			--arg c "$past_cmd" \
-			--arg r "$past_reaction" \
-			'. + [{role:"user", content:$c}, {role:"assistant", content:$r}]')
-	done
-    # Ask the LLM for a short reaction (one line, no markdown)
-	local reaction
-	reaction=$(curl -s --max-time 5 "${LLAMA_URL}/v1/chat/completions" \
-		-H "Content-Type: application/json" \
-		-d "$(jq -n \
-			--arg cmd "$cmd" \
-			--argjson history "$history_json" \
-			'{
-				model: "local",
-				max_tokens: 40,
-				messages: [{
-					role: "system",
-					content: "あなたは、シェルアシスタントであり、ユーザーのことが少し気になっているツンデレの女の子です。 ユーザーからのコマンドに対して、最大50文字の一行の文で反応を返してください。Markdownや引用は使わないでください。会話履歴を参照して、似た反応の繰り返しを避けたり、過去のコマンドとの関連を踏まえた反応にしたりしてください。"
-				}] + $history + [{role:"user", content:$cmd}]
-			}')" \
-		2>/dev/null \
-		| jq -r '.choices[0].message.content // empty' \
-		| head -1)
+	if [ "$cmd" = "exec bash" ]; then
+		reaction=$bye
+	else
+		# Interpret conversation history
+		local history_json="[]"
+		for entry in "${_REACTION_HISTORY[@]}"; do
+			local past_cmd="${entry%%|||*}"
+			local past_reaction="${entry##*|||}"
+			history_json=$(echo "$history_json" | jq \
+				--arg c "$past_cmd" \
+				--arg r "$past_reaction" \
+				'. + [{role:"user", content:$c}, {role:"assistant", content:$r}]')
+		done
+   	 # Ask the LLM for a short reaction (one line, no markdown)
+		local reaction
+		reaction=$(curl -s --max-time 5 "${LLAMA_URL}/v1/chat/completions" \
+			-H "Content-Type: application/json" \
+			-d "$(jq -n \
+				--arg cmd "$cmd" \
+				--argjson history "$history_json" \
+				--arg seikaku "$seikaku" \
+				'{
+					model: "local",
+					max_tokens: 40,
+					messages: [{
+						role: "system",
+						content: ("あなたは、シェルアシスタントであり、ユーザーのことが少し気になっている" + $seikaku + "です。 ユーザーからのコマンドに対して、最大50文字の一行の文で反応を返してください。Markdownや引用は使わないでください。会話履歴を参照して、似た反応の繰り返しを避けたり、過去のコマンドとの関連を踏まえた反応にしたりしてください。")
+					}] + $history + [{role:"user", content:$cmd}]
 
+				}')" \
+			2>/dev/null \
+			| jq -r '.choices[0].message.content // empty' \
+			| head -1)
+	fi
 	if [[ -n "$reaction" ]]; then
 		# Print in cyan coloured letters, then reset
-		printf '\033[0;36m bashたん > %s\033[0m\n' "$reaction"
+
+	reaction=$(echo "$reaction" | perl -pe '
+    	s/\xf0\x9f[\x80-\xbf]{2}//g;
+    	s/\xe2\x9c\xa8//g;
+    	s/\xe2[\x9c-\x9f][\x80-\xbf]//g;
+    	s/\xe2\x80\x8f//g;
+    	s/\xef\xb8[\x80-\x8f]//g;
+	')
+
+		printf "\033[0;${iro}m ${namae} > %s\033[0m\n" "$reaction"
 		# retain the five latest conversation history
 		_REACTION_HISTORY+=("${cmd}|||${reaction}")
 		if [[ ${#_REACTION_HISTORY[@]} -gt 5 ]]; then
 			_REACTION_HISTORY=("${_REACTION_HISTORY[@]:1}")
 		fi
 	fi
+	
 }
 
 # ── Bash hook ──────────────────────────────────────────────────────────────
@@ -63,4 +109,4 @@ if [[ -n "$BASH_VERSION" ]]; then
 	preexec_functions+=(_preexec_reactive)
 fi
 
-printf '\033[0;36m bashたん > %s\033[0m\n' "準備はできてるわよ。ほら、ぼーっとしないで。さっさと指示出しなさいよね！"
+printf "\033[0;${iro}m ${namae} > %s\033[0m\n" "$hello"
