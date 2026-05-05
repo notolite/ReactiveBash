@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# reactive_shell.sh
+# Source this file in your .bashrc / .zshrc:
+#	source /path/to/reactive_shell.sh
+#
+# Requires a running llama.cpp server (default: http://localhost:8080)
+
+LLAMA_URL="${LLAMA_URL:-http://localhost:8080}"
+
+_llm_react() {
+	local cmd="$1"
+
+	# Skip empty commands or the sourcing itself
+	[[ -z "$cmd" ]] && return
+
+	# Interpret conversation history
+	local history_json="[]"
+	for entry in "${_REACTION_HISTORY[@]}"; do
+		local past_cmd="${entry%%|||*}"
+		local past_reaction="${entry##*|||}"
+		history_json=$(echo "$history_json" | jq \
+			--arg c "$past_cmd" \
+			--arg r "$past_reaction" \
+			'. + [{role:"user", content:$c}, {role:"assistant", content:$r}]')
+	done
+    # Ask the LLM for a short reaction (one line, no markdown)
+	local reaction
+	reaction=$(curl -s --max-time 5 "${LLAMA_URL}/v1/chat/completions" \
+		-H "Content-Type: application/json" \
+		-d "$(jq -n \
+			--arg cmd "$cmd" \
+			--argjson history "$history_json" \
+			'{
+				model: "local",
+				max_tokens: 40,
+				messages: [{
+					role: "system",
+					content: "あなたは、シェルアシスタントであり、ユーザーのことが少し気になっているツンデレの女の子です。 ユーザーからのコマンドに対して、最大50文字の一行の文で反応を返してください。Markdownや引用は使わないでください。会話履歴を参照して、似た反応の繰り返しを避けたり、過去のコマンドとの関連を踏まえた反応にしたりしてください。"
+				}] + $history + [{role:"user", content:$cmd}]
+			}')" \
+		2>/dev/null \
+		| jq -r '.choices[0].message.content // empty' \
+		| head -1)
+
+	if [[ -n "$reaction" ]]; then
+		# Print in cyan coloured letters, then reset
+		printf '\033[0;36m bashたん > %s\033[0m\n' "$reaction"
+		# retain the five latest conversation history
+		_REACTION_HISTORY+=("${cmd}|||${reaction}")
+		if [[ ${#_REACTION_HISTORY[@]} -gt 5 ]]; then
+			_REACTION_HISTORY=("${_REACTION_HISTORY[@]:1}")
+		fi
+	fi
+}
+
+# ── Bash hook ──────────────────────────────────────────────────────────────
+if [[ -n "$BASH_VERSION" ]]; then
+	_preexec_reactive() {
+		_llm_react "$1"
+	}
+
+	# Use bash-preexec if available, otherwise fall back to DEBUG trap
+	source ~/.bash-preexec.sh
+	preexec_functions+=(_preexec_reactive)
+fi
+
+printf '\033[0;36m bashたん > %s\033[0m\n' "準備はできてるわよ。ほら、ぼーっとしないで。さっさと指示出しなさいよね！"
