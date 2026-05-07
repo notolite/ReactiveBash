@@ -43,7 +43,7 @@ _llm_react() {
 	
 	#display bye message when reloading bash
 
-	if [ "$cmd" = "exec bash" ]; then
+	if [[ "$cmd" == "exec bash" || "$cmd" == "exec zsh" ]]; then
 		reaction=$bye
 	else
 		# Interpret conversation history
@@ -108,5 +108,7 @@ if [[ -n "$BASH_VERSION" ]]; then
 	source ~/.bash-preexec.sh
 	preexec_functions+=(_preexec_reactive)
 fi
-
+if [[ -n "$ZSH_VERSION" ]]; then
+    preexec() { _llm_react "$1"; }
+fi
 printf "\033[0;${iro}m ${namae} > %s\033[0m\n" "$hello"
