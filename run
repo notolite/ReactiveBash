@@ -3,7 +3,6 @@
 # Usage
 # source /path/to/reactive_shell.sh [cyan|pink|yellow]
 # different colour args calls different assistants
-# omitting the arg interpreted as cyan
 #
 # Requires a running llm server (default: http://localhost:8080)
 

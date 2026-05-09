@@ -5,7 +5,7 @@
 ### 依存しているもの
 1. LLMサーバ
 
-   LLMサーバがエンドポイント```http://localhost:8080/v1/completion```で反応を返してくれる状態にある必要があります
+   LLMサーバがエンドポイント```http://localhost:8080/v1/completion```で反応を返してくれる状態にある必要があります。導入方法の例は後述。
 
 2. jq
 
@@ -15,7 +15,7 @@
    pacman -S jq
    ~~~
 
-4. bash-preexec
+3. bash-preexec（bashのみ）
 
    公開元：[rcaloras/bash-preexec](https://github.com/rcaloras/bash-preexec/)
 
@@ -30,9 +30,7 @@ source run cyan  # bashたんを呼び出し
 source run pink  # bashさんを呼び出し
 source run yellow  # bashちゃんを呼び出し
 
-source run  # 引数未指定の場合はcyanにフォールバック
-
-exec bash  # 終了するにはbashを再読み込み
+exec bash  # 終了するにはシェルを再読み込み
 ~~~
 
 ## キャラクターの定義
