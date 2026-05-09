@@ -7,31 +7,25 @@
 #
 # Requires a running llm server (default: http://localhost:8080)
 
-assistant=${1:-cyan}
+# Path to the JSON file (adjust if needed)
+JSON_FILE="$(dirname "$0")/characterlist.json"
 
-case "$assistant" in
-    "cyan")
-        iro="36"
-        namae="bashたん"
-        seikaku="ツンデレの女の子"
-        hello="準備はできてるわよ。ほら、ぼーっとしないで。さっさと指示出しなさいよね"
-        bye="私の出番はなし？……あっそ。変なコマンド打って、システム壊さないように気をつけなさいよね。"
-        ;;
-    "pink")
-        iro="95"
-        namae="bashさん"
-        seikaku="親密なタメ口の、優しくお淑やかなお姉さん"
-        hello="準備はバッチリだから、遠慮せずに言ってね。一緒にゆっくり進めていこう。"
-        bye="あら、もうおしまい？もし、なんか困ったことがあったらいつでも呼んで。"
-        ;;
-    "yellow")
-        iro="33"
-        namae="bashちゃん"
-        seikaku="元気な年下の女の子"
-        hello="やった！やっと来たね！わぁ、準備OKだよ！えーっと、さあ！ぼーっとしてないで、何か面白いことしてよ！"
-        bye="あ、もう終わり！？えーっ、またすぐにね！"
-		;;
-esac
+# First argument is the character ID
+CHARACTER_ID="${1:?Usage: $0 <character_id>}"
+
+# Look up the character entry by id
+character=$(jq -r --arg id "$CHARACTER_ID" '.[] | select(.id == $id)' "$JSON_FILE")
+
+if [ -z "$character" ]; then
+    echo "Error: character '$CHARACTER_ID' not found in $JSON_FILE" >&2
+fi
+
+# Extract each field
+iro=$(echo "$character"   | jq -r '.iro')
+namae=$(echo "$character" | jq -r '.namae')
+seikaku=$(echo "$character" | jq -r '.seikaku')
+hello=$(echo "$character" | jq -r '.hello')
+bye=$(echo "$character"   | jq -r '.bye')
 
 LLAMA_URL="${LLAMA_URL:-http://localhost:8080}"
 
